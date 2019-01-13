@@ -22,6 +22,7 @@ public class MainActivity extends AppCompatActivity {
     public static final String PRIMARY_NOTIFICATION_CHANNEL = "primary_notification_channel";
     public static final int NOTIFICATION_ID = 0;
     public static final String ACTION_UPDATE_NOTIFICATION = "com.example.notifyme.ACTION_UPDATE_NOTIFICATION";
+    public static final String ACTION_DELETE_NOTIFICATION = "com.example.notifyme.ACTION_DELETE_NOTIFICATION";
 
     private Button button_notify;
     private Button button_cancel;
@@ -61,7 +62,10 @@ public class MainActivity extends AppCompatActivity {
         createNotificationChannel();
         setNotificationButtonState(true, false, false);
 
-        registerReceiver(receiver, new IntentFilter(ACTION_UPDATE_NOTIFICATION));
+        IntentFilter filter = new IntentFilter();
+        filter.addAction(ACTION_UPDATE_NOTIFICATION);
+        filter.addAction(ACTION_DELETE_NOTIFICATION);
+        registerReceiver(receiver, filter);
     }
 
     public void cancelNotification() {
@@ -102,6 +106,10 @@ public class MainActivity extends AppCompatActivity {
         PendingIntent notifyPI = PendingIntent.getActivity(this, NOTIFICATION_ID,
                 notificationIntent, PendingIntent.FLAG_UPDATE_CURRENT);
 
+        // Notification delete intent
+        Intent deleteIntent = new Intent(ACTION_DELETE_NOTIFICATION);
+        PendingIntent deletePI = PendingIntent.getBroadcast(this, NOTIFICATION_ID,
+                deleteIntent, PendingIntent.FLAG_ONE_SHOT);
 
         return new NotificationCompat.Builder(this, PRIMARY_NOTIFICATION_CHANNEL)
                 .setContentTitle("You've been notified!")
@@ -110,7 +118,8 @@ public class MainActivity extends AppCompatActivity {
                 .setContentIntent(notifyPI)
                 .setAutoCancel(true)
                 .setPriority(NotificationCompat.PRIORITY_HIGH)
-                .setDefaults(NotificationCompat.DEFAULT_ALL);
+                .setDefaults(NotificationCompat.DEFAULT_ALL)
+                .setDeleteIntent(deletePI);
     }
 
     public void createNotificationChannel(){
@@ -142,7 +151,17 @@ public class MainActivity extends AppCompatActivity {
 
         @Override
         public void onReceive(Context context, Intent intent) {
-            updateNotifications();
+            String action = intent.getAction();
+
+            if (action != null) {
+                switch (action){
+                    case ACTION_UPDATE_NOTIFICATION:
+                        updateNotifications();;
+                        break;
+                    case ACTION_DELETE_NOTIFICATION:
+                        setNotificationButtonState(true, false, false);
+                }
+            }
         }
     }
 
